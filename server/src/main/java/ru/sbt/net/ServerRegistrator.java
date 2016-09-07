@@ -21,7 +21,15 @@ public class ServerRegistrator {
             Object[] args = (Object[]) inputStream.readObject();
 
             Method method = impl.getClass().getMethod(methodName, Stream.of(args).map(Object::getClass).toArray(Class[]::new));
-            outputStream.writeObject(method.invoke(impl, args));
+            try {
+                Object result = method.invoke(impl, args);
+                outputStream.writeBoolean(false);
+                outputStream.writeObject(result);
+            }catch (IOException ignore) {
+            }catch(Exception e) {
+                outputStream.writeBoolean(true);
+                outputStream.writeObject(e);
+            }
         }
     }
 

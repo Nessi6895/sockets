@@ -25,7 +25,10 @@ public class ClientInvocationHandler implements InvocationHandler {
 
             outputStream.write(method.getName().getBytes());
             outputStream.writeObject(args);
-            return  inputStream.readObject();
+            Boolean ifThrowsException = inputStream.readBoolean();
+            if(ifThrowsException)
+                throw (Exception) inputStream.readObject();
+            return inputStream.readObject();
         }
     }
 }
