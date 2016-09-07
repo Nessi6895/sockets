@@ -1,15 +1,37 @@
 package ru.sbt.net;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.stream.Stream;
 
 public class ServerRegistrator {
-    public static void listen(String host, int port, Object impl) {
-        String methodName = null;
-        Object[] args = null;
+    public static void listen(int port, Object impl) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        ServerSocket serverSocket = new ServerSocket(port);
+        try (Socket client = serverSocket.accept()) {
+            ObjectInputStream inputStream = new ObjectInputStream(client.getInputStream());
+            ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());
 
+            String methodName = getMethodName(inputStream);
+            Object[] args = (Object[]) inputStream.readObject();
+
+            Method method = impl.getClass().getMethod(methodName, Stream.of(args).map(Object::getClass).toArray(Class[]::new));
+            outputStream.writeObject(method.invoke(impl, args));
+        }
     }
 
-    public static void main(String[] args) {
-        ServerRegistrator.listen("localhost", 5000, new CalculatorImpl());
+    public static void main(String[] args) throws IOException, ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        ServerRegistrator.listen(5000, new CalculatorImpl());
+    }
+
+    private static String getMethodName(InputStream stream) throws IOException {
+        byte[] bytes = new byte[1024];
+        int count = stream.read(bytes);
+        return new String(bytes, 0, count);
     }
 }
