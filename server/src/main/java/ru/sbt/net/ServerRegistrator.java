@@ -25,7 +25,6 @@ public class ServerRegistrator {
                 Object result = method.invoke(impl, args);
                 outputStream.writeBoolean(false);
                 outputStream.writeObject(result);
-            }catch (IOException ignore) {
             }catch(Exception e) {
                 outputStream.writeBoolean(true);
                 outputStream.writeObject(e);
